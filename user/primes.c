@@ -1,56 +1,72 @@
 #include "kernel/types.h"
+#include "kernel/stat.h"
 #include "user/user.h"
-void exec_pipe(int fd)
-{
-    int num;
-    read(fd, &num, 4);
-    printf("prime %d\n", num);
 
-    int p[2];
-    pipe(p);
-    int tmp = -1;
-    while (1) {
-        int n = read(fd, &tmp, 4);
-        if (n<= 0) {
-            break;
-        }
-        if (tmp % num != 0) {
-            //printf(“%d writing %d and n is: %d\n”, getpid(), tmp, n);*
-            write(p[1], &tmp, 4);
-        }
-    }
-    if (tmp == -1) {
-        close(p[1]);
-        close(p[0]);
-        close(fd);
-        return;
-    }
-    int pid = fork();
-    if (pid == 0) {
-        close(p[1]);
-        close(fd);
-        exec_pipe(p[0]);
-        close(p[0]);
-    }
-    else {
-        close(p[1]);
-        close(p[0]);
-        close(fd);
-        wait(0);
-    }
-}
+#define MAX 36
+#define FIRST_PRIME 2
+
+int generate_natural();  // -> out_fd
+int prime_filter(int in_fd, int prime);  // -> out_fd
+
 int
-main(int argc, char const * argv[])
+main(int argc, char *argv[])
 {
-  int p[2];
-  pipe(p);
-  for (int i = 2; i<35; i++) {
-      int n = i;
-      write(p[1], &n, 4);
-  }
-  close(p[1]);
-  exec_pipe(p[0]);
-  close(p[0]);
+	int prime; 
+	
+	int in = generate_natural();
+	while (read(in, &prime, sizeof(int))) {
+		// printf("prime %d: in_fd: %d\n", prime, in);  // debug
+		printf("prime %d\n", prime); 
+		in = prime_filter(in, prime);//in=3,4,5...35 prime=2
+	}
 
-  exit(1);
+	exit(0);
+}
+
+// 生成自然数: 2, 3, 4, ..< MAX
+int
+generate_natural() {
+	int out_pipe[2];
+	
+	pipe(out_pipe);
+
+	if (!fork()) {
+		for (int i = FIRST_PRIME; i < MAX; i++) {//max=36 first_prime=2
+			write(out_pipe[1], &i, sizeof(int));
+		}
+		close(out_pipe[1]);
+
+		exit(0);
+	}
+
+	close(out_pipe[1]);
+// wait(0);
+	return out_pipe[0];
+}
+
+// 素数筛
+int 
+prime_filter(int in_fd, int prime) 
+{
+	int num; 
+	int out_pipe[2];
+
+	pipe(out_pipe);
+
+	if (!fork()) {
+		while (read(in_fd, &num, sizeof(int))) {
+			if (num % prime) {
+				write(out_pipe[1], &num, sizeof(int));
+			}
+		}
+		close(in_fd);
+		close(out_pipe[1]);
+		
+		exit(0);
+	}
+
+	close(in_fd);
+	close(out_pipe[1]);
+// wait(0);
+	return out_pipe[0];
 }
