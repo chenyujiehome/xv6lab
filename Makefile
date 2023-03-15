@@ -194,7 +194,7 @@ UPROGS=\
 	$U/_testFork\
 	$U/_fakels\
 	$U/_find\
-	# $U/_find_backup\
+	$U/_xargs\
 
 
 
