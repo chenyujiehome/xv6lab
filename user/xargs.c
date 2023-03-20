@@ -23,9 +23,9 @@ main(int argc, char *argv[])
 	for (c = 1; c < argc; c++) {
 		v[c-1] = argv[c];
 	}
-	--c;
+	--c;//v[args]
 
-	while (read(0, &ch, 1) > 0) {
+	while (read(0, &ch, 1) > 0) {//0 is console, console ro ch
 		if (is_blank(ch)) {
 			blanks++;
 			continue;
