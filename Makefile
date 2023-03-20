@@ -195,7 +195,8 @@ UPROGS=\
 	$U/_fakels\
 	$U/_find\
 	$U/_xargs\
-
+	$U/_q1\
+	$U/_q3\
 
 
 ifeq ($(LAB),$(filter $(LAB), lock))
